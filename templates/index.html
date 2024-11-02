@@ -1,21 +1,180 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Therapy Chatbot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <style>
+                           /* Scrollbar Styling */
+       ::-webkit-scrollbar {
+        width: 5px; /* Width of the scrollbar */
+    }
+
+    ::-webkit-scrollbar-track {
+        background-color: transparent; /* Background color of the scrollbar track */
+        border-radius: 10px; /* Rounded corners for the track */
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border-radius: 10px; /* Rounded corners for the thumb */
+        background: linear-gradient(315deg, #8303d4 0%, #531fff 74%); /* Gradient color */
+    }
+        .bg {
+            font-family: Arial, sans-serif;
+            background: url("/static/bg2.jpg") center / cover no-repeat; /* Use relative path */
+            min-height: 100vh;
+            scroll-behavior: hidden;
+            overflow-y: hidden;
+        }
+        .chat-container {
+            max-width: 1000px;
+            margin: auto;
+            background: rgba(0, 0, 0, 0.5); /* Slightly transparent */
+            padding: 20px;
+            border-radius: 8px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid #8303d4;
+
+        }
+        .title {
+            font-family: "Itim", cursive;
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            margin-top: 0px;
+            color:white;
+        }
+        .chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.9); /* Slightly transparent */
+            border-radius: 5px;
+
+        }
+        .bot-message, .user-message {
+            padding: 10px;
+            border-radius: 10px;
+            margin: 5px 0;
+            max-width: 75%;
+            clear: both;
+            border: 2px solid #8303d4;
+
+        }
+        .bot-message {
+            background-image: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);            text-align: left;
+            float: left;
+        }
+        .user-message {
+            background-image: linear-gradient(to top, #f3e7e9 0%, #e3eeff 99%, #e3eeff 100%);
+                color: black;
+            text-align: right;
+            float: right;
+        }
+        .input-container {
+            display: flex;
+        }
+        .input-container input {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 5px 0 0 5px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+        .input-container button {background-image: linear-gradient(to right, #DA22FF 0%, #9733EE  51%, #DA22FF  100%)}
+         .input-container button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: black !important;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            display: block;
+            transition: 0.5s;
+            background-size: 200% auto;
+
+
+        }
+        
+          .input-container button:hover {
+            background-position: right center; /* change the direction of the change here */
+            color: #fff;
+            text-decoration: none;
+          }
+         
+    </style>
 </head>
-<body>
+<body class="bg">
     <div class="chat-container">
         <h2 class="title">Therapy Chatbot</h2>
         <div id="chat-box" class="chat-box"></div>
         <div class="input-container">
-            <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off">
+            <input type="text" id="user-input" placeholder="Please send a message to chat with therapy bot..." autocomplete="off" required>
             <button id="send-btn" onclick="sendMessage()">Send</button>
         </div>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        function sendMessage() {
+            const userInput = document.getElementById("user-input").value.trim();
+            if (!userInput) return;
+
+            // Append user message to chat box
+            const chatBox = document.getElementById("chat-box");
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.classList.add("user-message");
+            userMessageDiv.innerHTML = `<b>User👤</b><br> ${userInput}`; // Use innerHTML to include bold
+            chatBox.appendChild(userMessageDiv);
+            document.getElementById("user-input").value = ''; // Clear input
+
+            // Send user input to the server
+            fetch('/get_response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: userInput })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                // Append chatbot response to chat box
+                const botMessageDiv = document.createElement("div");
+                botMessageDiv.classList.add("bot-message", "bot-content");
+                botMessageDiv.innerHTML = `<b style="color:crimson">🤖Therapy bot:</b><br> ${data.response}`;
+                chatBox.appendChild(botMessageDiv);
+
+                // Scroll to the bottom of the chat box
+                chatBox.scrollTop = chatBox.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+            
+        }
+                // Function to auto-bold text enclosed in double asterisks
+        function autoBoldText() {
+            const botMessages = document.querySelectorAll('.bot-content');
+            botMessages.forEach(message => {
+                message.innerHTML = message.innerHTML.replace(/(\s*\*\*(.*?)\*\*\s*)/g, '<strong>$2</strong>');
+            });
+        }
+                // Add event listener for "Enter" key
+                document.getElementById("user-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sendMessage(); // Call sendMessage function on Enter key press
+                event.preventDefault(); // Prevent default action (like form submission)
+            }
+        });
+    </script>
+
 </body>
 </html>
